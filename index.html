@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    #mainDiv {
+      display: flex;
+      flex-direction: column;
+      max-width: 80%;
+    }
+
+    #nextPreviousDiv {
+      display: flex;
+      flex-direction: row;
+    }
+
+    #tagsDiv {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .spanDiv {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .spanText {
+      padding-right: 10px;
+    }
+
+    img {
+      cursor: pointer;
+      object-fit: contain;
+      padding-right: 10px;
+    }
+  </style>
+</head>
+
+
+<body>
+  <div id="mainDiv">
+    <canvas id="myCanvas" style="border:1px solid #000000;"></canvas>
+    <br />
+    <label for="imageInput">
+      Upload image
+    </label>
+    <input type="file" id="imageInput" accept="image/*">
+    <br />
+    <div id="nextPreviousDiv">
+      <span id="itemCount"></span>
+      <br />
+      <button id="previous">Previous</button>
+      <button id="next">Next</button>
+    </div>
+    <br />
+    <span>Tags</span>
+    <div id="tagsDiv">
+    </div>
+    <br />
+    <span>Gallery</span>
+    <div id="galleryDiv">
+    </div>
+  </div>
+
+</body>
+
+</html>
+
+<script>
+  const canvas = document.getElementById('myCanvas');
+  // https://dirask.com/posts/JavaScript-UUID-function-in-Vanilla-JS-1X9kgD
+  const uuidv4 = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  const textHitText = (x, y, text) => {
+    return (x >= text.textX - 5 && x <= text.textX + text.textWidth + 10 && y >= text.textY - text.textHeight - 5 && y <= text.textY + 10);
+  }
+
+  const buttonCheck = () => {
+    const previousButton = document.getElementById('previous');
+    const nextButton = document.getElementById('next');
+    previousButton.disabled = false;
+    nextButton.disabled = false;
+    if (saveData.length > 0) {
+      const itemCount = document.getElementById('itemCount');
+      itemCount.textContent = `Photo ${currentImageIndex} of ${saveData.length}`;
+      if (currentImageIndex === 1) {
+        previousButton.disabled = true;
+      }
+      if (currentImageIndex === saveData.length) {
+        nextButton.disabled = true;
+      }
+    } else {
+      previousButton.disabled = true;
+      nextButton.disabled = true;
+    }
+  }
+
+  let imgInput = document.getElementById('imageInput');
+  const saveData = window.localStorage.getItem('saveData') ? JSON.parse(window.localStorage.getItem('saveData')) : [];
+  let currentImageIndex = window.localStorage.getItem('currentImageIndex');
+  if (!currentImageIndex) {
+    currentImageIndex = saveData.length > 0 ? 1 : 0;
+  }
+  window.localStorage.setItem('currentImageIndex', currentImageIndex);
+  let currentImage = saveData.length > 0 ? saveData[currentImageIndex - 1] : null;
+  buttonCheck();
+
+
+  const nextButton = document.getElementById('next');
+  nextButton.onclick = e => {
+    e.preventDefault();
+    currentImageIndex++;
+    changeCurrentImage(currentImageIndex);
+  }
+
+  const previousButton = document.getElementById('previous');
+  previousButton.onclick = e => {
+    e.preventDefault();
+    currentImageIndex--;
+    changeCurrentImage(currentImageIndex);
+  }
+
+  const galleryPics = () => {
+    const imageDiv = document.getElementById('galleryDiv');
+    imageDiv.innerHTML = '';
+    for (let i = 0; i < saveData.length; i++) {
+      const image = new Image();
+      image.src = saveData[i].image;
+      image.width = 100;
+      image.height = 100;
+      image["data-index"] = i + 1;
+      image.onclick = e => {
+        currentImageIndex = e.target["data-index"];
+        changeCurrentImage(currentImageIndex);
+        buttonCheck();
+      }
+      imageDiv.appendChild(image);
+    }
+  }
+
+  const changeCurrentImage = (index) => {
+    window.localStorage.setItem('currentImageIndex', index);
+    currentImage = saveData[index - 1];
+    if (currentImage) {
+      const canvas = document.getElementById('myCanvas');
+      const context = canvas.getContext('2d');
+      let image = new Image();
+      image.src = currentImage.image;
+      image.onload = (ev => {
+        const canvas = document.getElementById('myCanvas');
+        const context = canvas.getContext('2d');
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        // source of scaling to fit: https://riptutorial.com/html5-canvas/example/19169/scaling-image-to-fit-or-fill-
+        drawImage(canvas, context, image);
+        drawTags(context, currentImage);
+        galleryPics();
+      });
+    }
+    buttonCheck();
+  }
+
+  window.addEventListener('storage', () => {
+    const saveData = window.localStorage.getItem('saveData') ? JSON.parse(window.localStorage.getItem('saveData')) : [];
+    const itemCount = document.getElementById('itemCount');
+    itemCount.textContent = `Photo ${currentImageIndex} of ${saveData.length}`;
+    changeCurrentImage(currentImageIndex);
+    buttonCheck();
+  });
+
+  const drawImage = (canvas, context, image) => {
+    // source of scaling to fit: https://riptutorial.com/html5-canvas/example/19169/scaling-image-to-fit-or-fill-
+    context.canvas.width = window.innerWidth;
+    context.canvas.height = window.innerHeight;
+    const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+    const x = (canvas.width / 2) - (image.width / 2) * scale;
+    const y = (canvas.height / 2) - (image.height / 2) * scale;
+    context.drawImage(image, x, y, image.width * scale, image.height * scale);
+  }
+
+  const drawTags = (context, currentImage) => {
+    const tagsDiv = document.getElementById('tagsDiv')
+    tagsDiv.textContent = "";
+    for (let i = 0; i < currentImage.tags.length; i++) {
+      const { initialX, initialY, finalX, finalY, text, textX, textY, id } = currentImage.tags[i];
+      context.strokeRect(initialX, initialY, finalX, finalY);
+      drawText(text, parseInt(textX, 10), parseInt(textY, 10));
+      const spanDiv = document.createElement('div');
+      spanDiv.className = 'spanDiv';
+      const span = document.createElement('span');
+      span.className = 'spanText';
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = "Delete";
+      deleteButton.value = id;
+      deleteButton.onclick = e => {
+        e.preventDefault();
+        const id = e.target.value;
+        deleteTag(id);
+      }
+      span.textContent = text;
+      spanDiv.appendChild(span);
+      spanDiv.appendChild(deleteButton);
+      document.getElementById('tagsDiv').appendChild(spanDiv);
+    }
+  }
+
+  const deleteTag = id => {
+    for (let i = 0; i < currentImage.tags.length; i++) {
+      const tag = currentImage.tags[i];
+      if (tag.id === id) {
+        currentImage.tags.splice(i, 1);
+      }
+    }
+    window.localStorage.setItem('saveData', JSON.stringify(saveData));
+    window.dispatchEvent(new Event('storage'));
+  }
+
+  if (currentImage) {
+    const canvas = document.getElementById('myCanvas');
+    const context = canvas.getContext('2d');
+    let image = new Image();
+    image.src = currentImage.image;
+    image.onload = (ev => {
+      const canvas = document.getElementById('myCanvas');
+      const context = canvas.getContext('2d');
+      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+      // source of scaling to fit: https://riptutorial.com/html5-canvas/example/19169/scaling-image-to-fit-or-fill-
+      drawImage(canvas, context, image);
+      drawTags(context, currentImage);
+      galleryPics();
+    });
+  }
+  imgInput.addEventListener('change', e => {
+    const imageFile = e.target.files[0];
+    const reader = new FileReader();
+    reader.readAsDataURL(imageFile);
+    reader.onloadend = (e => {
+      let image = new Image();
+      image.src = e.target.result;
+      image.onload = (ev => {
+        const canvas = document.getElementById('myCanvas');
+        const context = canvas.getContext('2d');
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        // source of scaling to fit: https://riptutorial.com/html5-canvas/example/19169/scaling-image-to-fit-or-fill-
+        drawImage(canvas, context, image);
+        const imgData = canvas.toDataURL(imageFile.type, 1);
+        const currentData = {
+          id: uuidv4(),
+          image: imgData,
+          tags: [],
+        }
+        currentImage = currentData;
+        saveData.push(currentData);
+        currentImageIndex = saveData.length;
+        window.localStorage.setItem('currentImageIndex', currentImageIndex);
+        window.localStorage.setItem('saveData', JSON.stringify(saveData));
+        window.dispatchEvent(new Event('storage'))
+      })
+    });
+  });
+
+  const addInput = (canvasX, canvasY, inputX, inputY, tag) => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.style.position = 'fixed';
+    input.style.left = (inputX + 4) + 'px';
+    input.style.top = (inputY + 4) + 'px';
+
+    input.onkeydown = e => {
+      handleEnter(e, canvasX, canvasY);
+    }
+    input.onblur = e => {
+      handleBlur(e, canvasX, canvasY, tag);
+    }
+    document.body.appendChild(input);
+
+    input.focus();
+
+    hasInput = true;
+  }
+
+  //Key handler for input box:
+  const handleEnter = (e, x, y) => {
+    const keyCode = e.keyCode;
+    if (keyCode === 13) {
+      return e.target.blur();
+    }
+  }
+
+  const handleBlur = (e, x, y, tag) => {
+    const context = canvas.getContext('2d');
+    tag.text = e.target.value;
+    tag.textX = x;
+    tag.textY = y;
+    tag.textWidth = context.measureText(tag.text).width;
+    tag.textHeight = context.measureText("M").width;
+    if (tag.text) {
+      currentImage.tags.push(tag);
+      window.localStorage.setItem('saveData', JSON.stringify(saveData));
+      drawText(e.target.value, parseInt(x, 10), parseInt(y, 10));
+      drawTags(context, currentImage);
+      galleryPics();
+      window.dispatchEvent(new Event('storage'))
+    }
+
+    document.body.removeChild(e.target);
+    hasInput = false;
+  }
+
+  //Draw the text onto canvas:
+  const drawText = (text, x, y) => {
+    const context = canvas.getContext('2d');
+    context.textBaseline = 'top';
+    context.textAlign = 'left';
+    context.font = '20px sans-serif';
+    context.fillText(text, x + 5, y + 5);
+  }
+
+  const handleMouseDown = event => {
+    const context = canvas.getContext('2d');
+    const boundingClientRect = canvas.getBoundingClientRect();
+    const downClientX = event.clientX;
+    const downClientY = event.clientY;
+    const initialX = (event.clientX - boundingClientRect.left) / (boundingClientRect.right - boundingClientRect.left) * canvas.width;
+    const initialY = (event.clientY - canvas.getBoundingClientRect().top) / (boundingClientRect.bottom - boundingClientRect.top) * canvas.height;
+    let finalX = 0;
+    let finalY = 0;
+    // check if text to drag
+    let isDraggingText = false;
+    let text = null;
+    for (let i = 0; i < currentImage?.tags?.length || [].length; i++) {
+      const tag = currentImage.tags[i];
+      if (textHitText(initialX + 5, initialY - 20, tag)) {
+        isDraggingText = true;
+        text = tag;
+        break;
+      }
+    }
+    if (isDraggingText) {
+      const handleTextDrag = e => {
+        if (currentImage) {
+          let image = new Image();
+          image.src = currentImage.image;
+          image.onload = (ev => {
+            const canvas = document.getElementById('myCanvas');
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            // source of scaling to fit: https://riptutorial.com/html5-canvas/example/19169/scaling-image-to-fit-or-fill-
+            drawImage(canvas, context, image);
+            finalX = e.clientX - event.clientX - canvas.getBoundingClientRect().left;
+            finalY = e.clientY - event.clientY - canvas.getBoundingClientRect().top;
+            text.textX = initialX + finalX;
+            text.textY = initialY + finalY;
+            drawTags(context, currentImage);
+          });
+        }
+      }
+      canvas.addEventListener('mousemove', handleTextDrag);
+      canvas.addEventListener('mouseup', e => {
+        window.localStorage.setItem('saveData', JSON.stringify(saveData));
+        window.dispatchEvent(new Event('storage'));
+        canvas.removeEventListener('mousemove', handleTextDrag);
+      });
+    } else {
+      if (currentImage) {
+        const handleMouseMove = e => {
+          if (currentImage) {
+            let image = new Image();
+            image.src = currentImage.image;
+            image.onload = (ev => {
+              const canvas = document.getElementById('myCanvas');
+              const context = canvas.getContext('2d');
+              context.clearRect(0, 0, canvas.width, canvas.height);
+              // source of scaling to fit: https://riptutorial.com/html5-canvas/example/19169/scaling-image-to-fit-or-fill-
+              drawImage(canvas, context, image);
+              drawTags(context, currentImage)
+              finalX = e.clientX - event.clientX - canvas.getBoundingClientRect().left;
+              finalY = e.clientY - event.clientY - canvas.getBoundingClientRect().top;
+              context.strokeRect(initialX, initialY, finalX, finalY);
+            });
+          }
+        }
+
+        const handleMouseUp = e => {
+          const textCoordinateX = finalX > 0 ? initialX : initialX + finalX;
+          const textCoordinateY = finalY > 0 ? initialY : initialY + finalY;
+          const tag = {
+            id: uuidv4(),
+            initialX,
+            initialY,
+            finalX,
+            finalY
+          }
+          context.strokeRect(initialX, initialY, finalX, finalY);
+          addInput(textCoordinateX + 4, textCoordinateY + 4, downClientX, downClientY, tag);
+          canvas.removeEventListener('mousemove', handleMouseMove);
+          canvas.removeEventListener('mouseup', handleMouseUp);
+        }
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseup', handleMouseUp);
+      }
+    }
+  }
+  canvas.addEventListener('mousedown', handleMouseDown);
+</script>
