@@ -15,6 +15,7 @@
 - dragging text collison
 - dragging the rectangle from lower right to upper left causes the input field to be out of the box
 - Unable to drag a rectangle on mobile
+- Unable to support 2 running tabs/pages as of the moment due to localstorage events clashing with each page
 
 # Limitations
 - Only for modern browsers (Tested on Chrome)
