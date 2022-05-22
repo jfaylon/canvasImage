@@ -132,9 +132,11 @@
       image.src = saveData[i].image;
       image.width = 100;
       image.height = 100;
-      image["data-index"] = i + 1;
+      image.id = i + 1;
       image.onclick = e => {
-        currentImageIndex = e.target["data-index"];
+        e.preventDefault();
+        currentImageIndex = e.target.id;
+        console.log(currentImageIndex);
         changeCurrentImage(currentImageIndex);
         buttonCheck();
       }
@@ -157,7 +159,6 @@
         // source of scaling to fit: https://riptutorial.com/html5-canvas/example/19169/scaling-image-to-fit-or-fill-
         drawImage(canvas, context, image);
         drawTags(context, currentImage);
-        galleryPics();
       });
     }
     buttonCheck();
@@ -257,6 +258,7 @@
         currentImageIndex = saveData.length;
         window.localStorage.setItem('currentImageIndex', currentImageIndex);
         window.localStorage.setItem('saveData', JSON.stringify(saveData));
+        galleryPics();
         window.dispatchEvent(new Event('storage'))
       })
     });
