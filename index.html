@@ -88,10 +88,10 @@
     if (saveData.length > 0) {
       const itemCount = document.getElementById('itemCount');
       itemCount.textContent = `Photo ${currentImageIndex} of ${saveData.length}`;
-      if (currentImageIndex === 1) {
+      if (parseInt(currentImageIndex) === 1) {
         previousButton.disabled = true;
       }
-      if (currentImageIndex === saveData.length) {
+      if (parseInt(currentImageIndex) === saveData.length) {
         nextButton.disabled = true;
       }
     } else {
@@ -99,7 +99,6 @@
       nextButton.disabled = true;
     }
   }
-
   let imgInput = document.getElementById('imageInput');
   const saveData = window.localStorage.getItem('saveData') ? JSON.parse(window.localStorage.getItem('saveData')) : [];
   let currentImageIndex = window.localStorage.getItem('currentImageIndex');
@@ -185,7 +184,7 @@
   const drawTags = (context, currentImage) => {
     const tagsDiv = document.getElementById('tagsDiv')
     tagsDiv.textContent = "";
-    for (let i = 0; i < currentImage.tags.length; i++) {
+    for (let i = 0; i < currentImage?.tags?.length || [].length; i++) {
       const { initialX, initialY, finalX, finalY, text, textX, textY, id } = currentImage.tags[i];
       context.strokeRect(initialX, initialY, finalX, finalY);
       drawText(text, parseInt(textX, 10), parseInt(textY, 10));
@@ -269,7 +268,6 @@
     input.style.position = 'fixed';
     input.style.left = (inputX + 4) + 'px';
     input.style.top = (inputY + 4) + 'px';
-
     input.onkeydown = e => {
       handleEnter(e, canvasX, canvasY);
     }
@@ -277,15 +275,14 @@
       handleBlur(e, canvasX, canvasY, tag);
     }
     document.body.appendChild(input);
-
     input.focus();
-
     hasInput = true;
   }
 
   //Key handler for input box:
   const handleEnter = (e, x, y) => {
     const keyCode = e.keyCode;
+    // enter button
     if (keyCode === 13) {
       return e.target.blur();
     }
@@ -377,7 +374,7 @@
               context.clearRect(0, 0, canvas.width, canvas.height);
               // source of scaling to fit: https://riptutorial.com/html5-canvas/example/19169/scaling-image-to-fit-or-fill-
               drawImage(canvas, context, image);
-              drawTags(context, currentImage)
+              drawTags(context, currentImage);
               finalX = e.clientX - event.clientX - canvas.getBoundingClientRect().left;
               finalY = e.clientY - event.clientY - canvas.getBoundingClientRect().top;
               context.strokeRect(initialX, initialY, finalX, finalY);
