@@ -14,6 +14,7 @@
 # Known Issues
 - dragging text collison
 - dragging the rectangle from lower right to upper left causes the input field to be out of the box
+- Unable to drag a rectangle on mobile
 
 # Limitations
 - Only for modern browsers (Tested on Chrome)
