@@ -1,6 +1,7 @@
 # canvasImage
 
 # Thought process
+
 1. I started with trying to upload an image and put it on the canvas.
 2. Tried to resize/scale/align to center of the canvas
 3. Find a way to save the image and its coordinates by using JSON objects
@@ -10,20 +11,22 @@
 7. Use buttons to traverse to the different photos using events
 8. For the gallery, resize the images to be a thumbnail and use of events to trigger the traversal and access of the data.
 
-
 # Known Issues
+
 - dragging text collison
 - dragging the rectangle from lower right to upper left causes the input field to be out of the box
 - Unable to drag a rectangle on mobile
 - Unable to support 2 running tabs/pages as of the moment due to localstorage events clashing with each page
 
 # Limitations
+
 - Only for modern browsers (Tested on Chrome)
 - Fixed text font and color
 - Resized images based on canvas resolution
 - Has not been fully tested yet on mobile phones with varying resoltions and browsers
 
 # Rooms for Improvement
+
 - Choice of options for text and border colors
 - CSS Styling
 - Collision detection needs improvement
@@ -31,3 +34,14 @@
 - Move CSS to a separate file.
 - Make the code cleaner by using convenience methods (JQuery, lodash, etc.)
 - Reduce repetitive code by using functions
+- Modifiable font size per tag
+
+# Added features
+
+- Add coloring for new tags and borders
+- Add button colors
+- Add highlighted images
+- Change Photo to Image
+- Add font-awesome icons
+- Change title font sizes
+- Set canvas to center

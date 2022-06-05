@@ -176,7 +176,7 @@
     nextButton.disabled = false;
     if (saveData.length > 0) {
       const itemCount = document.getElementById('itemCount');
-      itemCount.textContent = `Photo ${currentImageIndex} of ${saveData.length}`;
+      itemCount.textContent = `Image ${currentImageIndex} of ${saveData.length}`;
       if (parseInt(currentImageIndex) === 1) {
         previousButton.disabled = true;
       }
@@ -280,7 +280,7 @@
   window.addEventListener('storage', () => {
     const saveData = window.localStorage.getItem('saveData') ? JSON.parse(window.localStorage.getItem('saveData')) : [];
     const itemCount = document.getElementById('itemCount');
-    itemCount.textContent = `Photo ${currentImageIndex} of ${saveData.length}`;
+    itemCount.textContent = `Image ${currentImageIndex} of ${saveData.length}`;
     changeCurrentImage(currentImageIndex);
     buttonCheck();
   });
