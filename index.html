@@ -2,16 +2,34 @@
 <html>
 
 <head>
+  <script src="https://kit.fontawesome.com/3c770dc5d0.js" crossorigin="anonymous"></script>
   <style>
     #mainDiv {
       display: flex;
+      align-items: center;
+      justify-content: center;
       flex-direction: column;
-      max-width: 80%;
+      max-width: 100%;
+    }
+
+    #myCanvas {
+      width: 80%;
+      aspect-ratio: 16 / 9;
     }
 
     #nextPreviousDiv {
       display: flex;
       flex-direction: row;
+      width: 65%;
+      max-width: 100%;
+      justify-content: space-around;
+    }
+
+    #settingsDiv {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
     }
 
     #tagsDiv {
@@ -22,6 +40,8 @@
     .spanDiv {
       display: flex;
       flex-direction: row;
+      justify-content: space-between;
+      padding: 5px;
     }
 
     .spanText {
@@ -33,6 +53,61 @@
       object-fit: contain;
       padding-right: 10px;
     }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .titleText {
+      font-size: 24px;
+    }
+
+    .custom-file-upload {
+      border: 1px solid #ccc;
+      display: inline-block;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+
+
+
+    /* source: https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_buttons_animate3*/
+    .button {
+      background-color: #04AA6D;
+      width: 50%;
+      text-align: center;
+      border: none;
+      box-shadow: 0 5px #999999;
+    }
+
+
+    .button:hover {
+      background-color: #3e8e41
+    }
+
+    .button:active {
+      background-color: #3e8e41;
+      box-shadow: 0 2px #666666;
+      transform: translateY(4px);
+    }
+
+    .button:disabled {
+      background-color: #999999;
+    }
+
+    .nextPreviousButton {
+      width: 30%;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+
+    .selected {
+      background-color: #fbf719;
+    }
+
+    img:hover {
+      background-color: #f4e98c;
+    }
   </style>
 </head>
 
@@ -41,23 +116,37 @@
   <div id="mainDiv">
     <canvas id="myCanvas" style="border:1px solid #000000;"></canvas>
     <br />
-    <label for="imageInput">
-      Upload image
+    <label for="imageInput" class="custom-file-upload button">
+      <i class="fa fa-cloud-upload"></i> Upload image
     </label>
     <input type="file" id="imageInput" accept="image/*">
     <br />
+    <div id="galleryCount">
+      <span class="titleText" id="itemCount"></span>
+    </div>
     <div id="nextPreviousDiv">
-      <span id="itemCount"></span>
-      <br />
-      <button id="previous">Previous</button>
-      <button id="next">Next</button>
+      <button id="previous" class="button nextPreviousButton"><i class="fa fa-arrow-left" aria-hidden="true"></i>
+        Previous</button>
+      <button id="next" class="button nextPreviousButton">
+        Next <i class="fa fa-arrow-right" aria-hidden="true"></i></button>
     </div>
     <br />
-    <span>Tags</span>
+    <div id="settingsDiv">
+      <span class="titleText">Settings</span>
+      <div id="borderSettings">
+        <input type="color" id="borderColor" name="border" value="#000000">
+        <label for="border">Border Color</label>
+        <input type="color" id="textColor" name="text" value="#000000">
+        <label for="text">Text Color</label>
+      </div>
+    </div>
+
+    <br />
+    <span class="titleText">Tags</span>
     <div id="tagsDiv">
     </div>
     <br />
-    <span>Gallery</span>
+    <span class="titleText">Gallery</span>
     <div id="galleryDiv">
     </div>
   </div>
@@ -109,6 +198,27 @@
   let currentImage = saveData.length > 0 ? saveData[currentImageIndex - 1] : null;
   buttonCheck();
 
+  const settingsCheck = () => {
+    const borderColor = window.localStorage.getItem('borderColor') || '#000000';
+    const textColor = window.localStorage.getItem('textColor') || '#000000';
+    const borderColorElement = document.getElementById('borderColor');
+    const textColorElement = document.getElementById('textColor');
+    borderColorElement.value = borderColor;
+    textColorElement.value = textColor;
+  }
+  settingsCheck();
+
+  const borderColorElement = document.getElementById('borderColor');
+  borderColorElement.onchange = e => {
+    e.preventDefault();
+    window.localStorage.setItem('borderColor', e.target.value);
+  }
+  const textColorElement = document.getElementById('textColor');
+  textColorElement.onchange = e => {
+    e.preventDefault();
+    window.localStorage.setItem('textColor', e.target.value);
+  }
+
 
   const nextButton = document.getElementById('next');
   nextButton.onclick = e => {
@@ -133,6 +243,9 @@
       image.width = 100;
       image.height = 100;
       image.id = i + 1;
+      if (image.id === currentImageIndex.toString()) {
+        image.className = 'selected';
+      }
       image.onclick = e => {
         e.preventDefault();
         currentImageIndex = e.target.id;
@@ -161,6 +274,7 @@
       });
     }
     buttonCheck();
+    galleryPics();
   }
 
   window.addEventListener('storage', () => {
@@ -173,8 +287,6 @@
 
   const drawImage = (canvas, context, image) => {
     // source of scaling to fit: https://riptutorial.com/html5-canvas/example/19169/scaling-image-to-fit-or-fill-
-    context.canvas.width = window.innerWidth;
-    context.canvas.height = window.innerHeight;
     const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
     const x = (canvas.width / 2) - (image.width / 2) * scale;
     const y = (canvas.height / 2) - (image.height / 2) * scale;
@@ -185,15 +297,16 @@
     const tagsDiv = document.getElementById('tagsDiv')
     tagsDiv.textContent = "";
     for (let i = 0; i < currentImage?.tags?.length || [].length; i++) {
-      const { initialX, initialY, finalX, finalY, text, textX, textY, id } = currentImage.tags[i];
+      const { borderColor, initialX, initialY, finalX, finalY, text, textColor, textX, textY, id } = currentImage.tags[i];
+      context.strokeStyle = borderColor || '#000000';
       context.strokeRect(initialX, initialY, finalX, finalY);
-      drawText(text, parseInt(textX, 10), parseInt(textY, 10));
+      drawText(text, textColor, parseInt(textX, 10), parseInt(textY, 10));
       const spanDiv = document.createElement('div');
       spanDiv.className = 'spanDiv';
       const span = document.createElement('span');
       span.className = 'spanText';
       const deleteButton = document.createElement('button');
-      deleteButton.textContent = "Delete";
+      deleteButton.innerHTML = `<i class="fa fa-trash" aria-hidden="true"></i> Delete`;
       deleteButton.value = id;
       deleteButton.onclick = e => {
         e.preventDefault();
@@ -292,14 +405,15 @@
   const handleBlur = (e, x, y, tag) => {
     const context = canvas.getContext('2d');
     tag.text = e.target.value;
+    tag.textColor = window.localStorage.getItem('textColor') || '#000000';
+    tag.textHeight = context.measureText("M").width;
+    tag.textWidth = context.measureText(tag.text).width;
     tag.textX = x;
     tag.textY = y;
-    tag.textWidth = context.measureText(tag.text).width;
-    tag.textHeight = context.measureText("M").width;
     if (tag.text) {
       currentImage.tags.push(tag);
       window.localStorage.setItem('saveData', JSON.stringify(saveData));
-      drawText(e.target.value, parseInt(x, 10), parseInt(y, 10));
+      drawText(e.target.value, tag.textColor, parseInt(x, 10), parseInt(y, 10));
       drawTags(context, currentImage);
       galleryPics();
       window.dispatchEvent(new Event('storage'))
@@ -310,11 +424,12 @@
   }
 
   //Draw the text onto canvas:
-  const drawText = (text, x, y) => {
+  const drawText = (text, textColor, x, y) => {
     const context = canvas.getContext('2d');
     context.textBaseline = 'top';
     context.textAlign = 'left';
-    context.font = '20px sans-serif';
+    context.font = '12px sans-serif';
+    context.fillStyle = textColor || '#000000';
     context.fillText(text, x + 5, y + 5);
   }
 
@@ -347,10 +462,10 @@
             const canvas = document.getElementById('myCanvas');
             const context = canvas.getContext('2d');
             context.clearRect(0, 0, canvas.width, canvas.height);
-            // source of scaling to fit: https://riptutorial.com/html5-canvas/example/19169/scaling-image-to-fit-or-fill-
             drawImage(canvas, context, image);
-            finalX = e.clientX - event.clientX - canvas.getBoundingClientRect().left;
-            finalY = e.clientY - event.clientY - canvas.getBoundingClientRect().top;
+            // source of scaling to fit: https://riptutorial.com/html5-canvas/example/19169/scaling-image-to-fit-or-fill-
+            finalX = e.clientX - event.clientX;
+            finalY = e.clientY - event.clientY;
             text.textX = initialX + finalX;
             text.textY = initialY + finalY;
             drawTags(context, currentImage);
@@ -378,6 +493,7 @@
               drawTags(context, currentImage);
               finalX = e.clientX - event.clientX - canvas.getBoundingClientRect().left;
               finalY = e.clientY - event.clientY - canvas.getBoundingClientRect().top;
+              context.strokeStyle = window.localStorage.getItem('borderColor') || '#000000';
               context.strokeRect(initialX, initialY, finalX, finalY);
             });
           }
@@ -386,13 +502,16 @@
         const handleMouseUp = e => {
           const textCoordinateX = finalX > 0 ? initialX : initialX + finalX;
           const textCoordinateY = finalY > 0 ? initialY : initialY + finalY;
+
           const tag = {
+            borderColor: window.localStorage.getItem('borderColor') || '#000000',
             id: uuidv4(),
             initialX,
             initialY,
             finalX,
             finalY
           }
+          context.strokeStyle = tag.borderColor;
           context.strokeRect(initialX, initialY, finalX, finalY);
           addInput(textCoordinateX + 4, textCoordinateY + 4, downClientX, downClientY, tag);
           canvas.removeEventListener('mousemove', handleMouseMove);
